@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>물류 박스 프린터 툴</title>
+  <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script> -->
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-minicolors/2.3.4/jquery.minicolors.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-minicolors/2.3.4/jquery.minicolors.min.css">
+  <link rel="stylesheet" href="css/paper.css">
+  <script src="js/xlsx.full.min.js"></script>
+  <script src="js/jszip.js"></script>
+  <script src="js/tableToExcel.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Sans+KR|Roboto&display=swap" rel="stylesheet">
+
+  <style>
+  body {font-family: 'Noto Sans KR','Roboto','Noto Sans', sans-serif;}
+  .noPrint {border:1px solid #ccc; font-size: 12px; background: #fff; margin:0 auto;  padding:10px; width: 297mm;}
+  .noPrint pre {border:1px solid #ccc; font-size: 12px; }
+  .noPrint #printTool > div {padding:5px;}
+  .sheet {padding:10mm;}
+  section article{display:block;width:100%;height:100%;}
+  #templateBox section article{border:1px dashed #ccc;}
+  /* .sheet article > div > div {border:1px solid #ccc;}  */
+  #printBox .sheet article > div > div {-webkit-user-modify: read-write; -moz-user-modify: read-write; user-modify: read-write;} 
+
+	button {padding:10px; margin-top:10px;}
+	
+  @page { size: A4 landscape }
+  @media print {
+      /* html, */
+      /* body {
+          width: 210mm;
+          height: 297mm;
+      }
+      .page {
+          margin: 0;
+          border: initial;
+          border-radius: initial;
+          width: initial;
+          min-height: initial;
+          box-shadow: initial;
+          background: initial;
+          page-break-after: always;
+      } */
+      .noPrint {display:none;}
+  }
+
+  #templateBox { zoom: 0.5; }
+  #excelDataTable {max-height: 300px; overflow: auto; margin-top: 10px;:}
+  </style>
+</head>
+
+<!-- Set "A5", "A4" or "A3" for class name -->
+<!-- Set also "landscape" if you need -->
+<body>
+  <div class="noPrint">
+    <!-- <pre>
+      --------박스에 붙이는 종이 출력 툴 (재고파악 용) ---------
+
+      데이터 갱신: (엑셀)
+        * 오늘날짜, 품목코드, 제품명, 박스번호 , 개수 
+        - excel파일 드래그해서 업로드(최종업로드파일기준 제품명 검색됨)
+      입력항목:
+        * 마지막 업로드된 데이터 시간출력
+        * 오늘날짜(자동입력), 
+        * 품목코드, 박스번호, 개수, 프린트출력수,   
+        
+      출력양식:
+        * 글자체 변경, 글자 크기, 엔터, 색상,  수정 가능하게
+        - A4  직접 웹에서 출력 / 워드 파일로 저장 
+      
+      
+      
+      -- 패킹리스트_박스출력엑셀 + 출력 페이지 양식
+      ----------------------------------------------------------
+      날짜                     박스번호                   수량
+      
+      
+              제 품 명 (큰글씨 파란)
+      
+      
+              제품코드(큰글씨 빨강)
+      
+      
+      -----------------------------------------------------------
+	</pre> -->
+	<!-- <section class="sheet padding-10mm"> -->
+	
+    <div id="printTool">
+		<div style="text-align: center; padding:20px 0;">
+			<div id="templateBox" class="A4 landscape">
+				<section class="sheet">
+				<article>
+					<div class="head">
+						<div class="box1">오늘날짜</div>
+						<div class="box2">박스번호</div>
+						<div class="box3">박스수량</div>
+					</div>
+					<div class="body">
+						<div class="box4">제 품 명</div>
+						<div class="box5">제품코드</div>
+					</div>
+					<div class="foot">
+						<div class="box6">특이사항</div>
+					</div>
+				</article>
+				</section>
+			</div>
+			미리보기
+			<select id="setStyleZoom" title="미리보기 줌">
+				<option selected>0.5</option>
+				<option>0.7</option>
+				<option>1</option>
+			</select>
+		</div>
+
+
+		<div>
+			<h1>1. 기본 템플릿 설정</h1>
+			<b>전체설정:</b>
+			<select id="setStylePageSize" title="출력 사이즈">
+				<option selected>A4</option>
+			</select>
+			<select id="setStylePadding" title="페이지 간격">
+				<option>0mm</option>
+				<option>5mm</option>
+				<option selected>10mm</option>
+				<option>15mm</option>
+				<option>20mm</option>
+				<option>25mm</option>
+			</select>
+			<select id="setStyleFamily" title="글자체">
+				<option selected>Noto Sans KR</option>
+				<option>Noto Sans</option>
+				<option>Roboto</option>
+				<option>sans-serif</option>
+				<option>Monospace</option>
+				<option>serif</option>
+			</select>
+			<br>
+			<b>박스정보:</b>
+			<input type="number" id="setHeadFontSize" title="글자 기본 크기 (30px)" value="30" min="0" max="9999"  />px 
+			<input type="text" id="setHeadColor" class="minicolor" title="글자 기본 색 (black = #000000)" value="#000000" /><br>
+			<b>제&nbsp;&nbsp;품&nbsp;&nbsp;명:</b>
+			<input type="number" id="setBody1FontSize" title="글자 기본 크기 (120px)" value="120" min="0" max="9999" />px 
+			<input type="text" id="setBody1Color" class="minicolor" title="글자 기본 색 (blue = #0000ff)" value="#0000ff" /><br>
+			<b>제품코드:</b>
+			<input type="number" id="setBody2FontSize" title="글자 기본 크기 (120px)" value="120" min="0" max="9999" />px 
+			<input type="text" id="setBody2Color" class="minicolor" title="글자 기본 색 (red = #ff0000)" value="#ff0000" />
+		</div>
+
+		<div>
+			<h1>2. 패킹리스트_박스출력엑셀 선택하기</h1>
+			<b>* 파일선택:</b> <input type="file" id="inputExcelFile"  accept=".xls,.xlsx,.csv" > <span id="fileState"></span>
+			<div id="excelDataTable"></div>
+			<!-- <button id="excelLoadBtn">Excel Load</button> -->
+		</div>
+
+		<div>
+			<h1>3. 프린트 정보 입력 (페이지 생성 및 출력)</h1>
+			<b>오늘날짜:</b> <input type="text" id="inputToday" /><br>
+			<b>박스번호:</b> <input type="text" id="inputBoxNumber" placeholder="(AABBCC)" value="BOX12345" onkeyup="this.value = this.value.toUpperCase();" />
+			<span style="margin:0 28px;">
+				<b>총&nbsp;&nbsp;수&nbsp;&nbsp;량:</b> <input type="number" id="inputTotalCount" value="90" min="0" max="99999" /> / 
+				<b>박스당개수:</b> <input type="number" id="inputItemCount" value="25" min="0" max="9999" /> 
+				<b> = 박스수량</b> <input type="number" id="inputBoxCount" value="4" min="0" max="9999" />
+			</span>
+			<b>중복출력수:</b> <input type="number" id="inputLoopCount" value="1" placeholder="중복출력수" min="1" max="50" />
+			<label><b>( <input type="checkbox" id="checkNotMakeEndPage" value="1" placeholder="낱개 박스 제거" checked /> 낱개 <span id="singleNum"></span> 박스 제거 )</b></label>
+			<br>
+			<b>특이사항:</b> <input type="text" id="inputMemo" placeholder="(특이사항 있을시 입력)" />
+			<br><br>
+			<b>제&nbsp;&nbsp;품&nbsp;&nbsp;명:</b> <input type="text" id="inputProductName" placeholder="(자동 검색 됨)" value="ㅁㅁㅁ" />
+			<br>
+			<b style="color:red">품목코드:</b> <input type="text" id="inputProductCode" placeholder="입력시(제품명 검색 됨)" value="EB437" onkeyup="this.value = this.value.toUpperCase();" /> (품목코드 발견시 제품명이 자동 변경됩니다.)
+			<br>
+			<button id="makePageBtn">페이지 생성</button> <button id="printBtn">프린트 하기</button>
+		</div>
+
+	</div>
+	<style>
+		.sheet article {position: relative;}
+		.sheet article .head {font-size:30px; display:flex;text-align: center; position: absolute; width: 100%;} 
+		.sheet article .head div { width:100%; } 
+		.sheet article .body{text-align:center; font-size:120px;height:100%;width:100%;display:inline-flex;flex-direction:column;justify-content:center;align-items:center;}
+		.sheet article .foot {font-size:30px; display:flex;text-align: center; position: absolute; width: 100%; bottom: 0;} 
+		.sheet article .foot div { width:100%; } 
+	  
+		.sheet article .box4 { color: blue;} 
+		.sheet article .box5 { color: red;} 
+
+		.minicolors-theme-default .minicolors-input{height:unset;}
+		.minicolors-theme-default .minicolors-swatch{top:0;left:0;width:17px;height:17px;}
+
+
+		#inputMemo {width:679px;}
+		#inputProductName {width:679px;}
+
+		#checkNotMakeEndPage { vertical-align: middle;}
+	  
+	</style>
+
+  </div>
+  <div id="printBox" class="A4 landscape">
+  </div>
+<script>
+
+
+	//날짜
+  function today(type='-'){
+	let today = new Date(); 
+	let year = today.getFullYear(); // 년도
+	let month = pad(today.getMonth() + 1);  // 월
+	let date = pad(today.getDate());  // 날짜
+	// let day = today.getDay();  // 요일
+	return year + type + month + type + date;
+  }
+  function pad(n, width=2) {
+	n = n + '';
+	return n.length >= width ? n : new Array(width - n.length + 1).join('0') + n;
+  }
+
+  	$(function(){
+	  	// console.log(today())
+		$('#inputToday').val(today());//오늘 날짜 자동 입력
+	  	$('.minicolor').minicolors();//색상선택
+		boxCalc();
+  	})
+  
+  //------미리보기
+  $('#setStyleZoom').change(function(){
+	  $('#templateBox').css('zoom', this.value);
+  })
+
+  //---------------------1
+  //스타일 간격 
+  $('#setStylePadding').change(function(){
+	//   console.log(this.value)
+	  $('.sheet').css('padding', this.value);
+  })
+  //글자체
+  $('#setStyleFamily').change(function(){
+	  $('#templateBox, #printBox').css('font-family', this.value);
+  })
+
+  //입력정보 스타일 변경
+  $('#setHeadFontSize').change(function(){
+	  if(this.value.length > 0 ) $('.sheet .head, .sheet .foot').css('font-size', this.value +'px');
+  })
+  $('#setHeadColor').change(function(){
+	  $('.sheet .head, .sheet .foot').css('color', this.value);
+  })
+  $('#setBody1FontSize').change(function(){
+	  if(this.value.length > 0 ) $('.sheet .box4').css('font-size', this.value +'px');
+  })
+  $('#setBody1Color').change(function(){
+	  $('.sheet .box4').css('color', this.value);
+  })
+  $('#setBody2FontSize').change(function(){
+	  if(this.value.length > 0 ) $('.sheet .box5').css('font-size', this.value +'px');
+  })
+  $('#setBody2Color').change(function(){
+	  $('.sheet .box5').css('color', this.value);
+  })
+
+  //---------------------2
+
+
+
+
+function ProcessExcel(data) {
+	var workbook = XLSX.read(data, {
+		type: 'binary'
+	});
+	var firstSheet = workbook.SheetNames[0];
+	var excelRows = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[firstSheet]);
+	excelDataToTable(excelRows)
+	excelData = excelRows;
+	console.log(excelRows)
+};
+
+function excelDataToTable(excelData, startRowNum=1, codeFieldNum=0, nameFieldNum=1) {
+	keys = Object.values(excelData[startRowNum]);
+	console.log(keys)
+	let rs = '<table border="1" cellspacing="0">';
+	let head='', rowData='';
+	for (let i = startRowNum; i < excelData.length; i++) {
+		// console.log(excelData[i]);
+		// console.log(i, excelData[i][keys[0]], excelData[i][keys[1]], excelData[i][keys[2]], excelData[i][keys[3]]);
+		if(i == startRowNum){
+			console.log(i, startRowNum)
+			head = '<thead><tr>';
+			for(var j = 0; j < keys.length; j++) {
+				head += `<th>`+keys[j]+`</th>`;
+			}
+			head += '</tr></thead>';
+		}else{
+			let dd = Object.values(excelData[i]);
+			if(dd.length > 2){
+				rowData += '<tr>';
+				for (let j = 0; j < dd.length; j++) {
+					rowData += '<td>'+ dd[j] +'</td>';
+					// console.log(excelData[i][keys[j]])
+					
+				}
+				rowData += '</tr>';
+			}
+		}
+	}
+	rs +=head + '<tbody>'+ rowData +'</tbody>'; 
+	rs += '</table>';
+	$('#excelDataTable').html(rs);
+
+}
+
+//품목코드로 검색
+function searchData(find, codeName= 'ID', resultName='SPV名称'){
+	if($('#excelDataTable table').length == 0 ){
+		// alert('엑셀 파일을 선택하세요.');
+		return; 
+	} 
+	codeIndex = $('#excelDataTable thead th:contains("'+codeName+'")').index()
+	resultIndex = $('#excelDataTable thead th:contains("'+resultName+'")').index()
+	// console.log(codeIndex, resultIndex)
+	$('#excelDataTable tbody tr').each(function(i,v){
+		let data = $(v).find('td:eq('+ codeIndex +')').text().trim();
+		if(data == find.trim()){
+			productName = $(v).find('td:eq('+ resultIndex +')').text().trim();
+			// console.log(i,v, data, result)
+			$('#inputProductName').val(productName);//제품명
+		}
+	})
+}
+
+
+//파일 변경시
+$('#inputExcelFile').change(function(){
+	var fileUpload = document.getElementById("inputExcelFile");
+	if (typeof(FileReader) != "undefined") {
+		var reader = new FileReader();
+		if (reader.readAsBinaryString) {//For Browsers other than IE.
+			reader.onload = function(e) {
+				ProcessExcel(e.target.result);
+			};
+			reader.readAsBinaryString(fileUpload.files[0]);
+		} else { //For IE Browser.
+			reader.onload = function(e) {
+				var data = "";
+				var bytes = new Uint8Array(e.target.result);
+				for (var i = 0; i < bytes.byteLength; i++) {
+					data += String.fromCharCode(bytes[i]);
+				}
+				ProcessExcel(data);
+			};
+			reader.readAsArrayBuffer(fileUpload.files[0]);
+		}
+	} else {
+		alert("HTML5를 지원하는 브라우저로 사용해주세요.");
+	}
+})
+
+
+
+  //---------------------3
+  //박스수량 구하기
+  function boxCalc(){
+	let total = parseInt($('#inputTotalCount').val());
+	let item = parseInt($('#inputItemCount').val());
+	// console.log(total, item)
+	if(total > -1 && item >-1){
+		let checkNotMakeEndPage =  $('#checkNotMakeEndPage').prop('checked');
+		let single = total % item;
+		let rs = '';
+		if(checkNotMakeEndPage && single > 0 ) rs = Math.floor( total / item );
+		else rs = Math.ceil( total / item );
+		if( single > 0) $('#singleNum').text(single +'개, 마지막')
+		else $('#singleNum').text('')
+		// let other = total%item;
+		// console.log(other) 
+		// if(other != 0) $('#inputMemo').val('마지막 박스 나머지 ' + other + '개 있습니다.');
+		if($('#inputItemCount').val != '' && $('#inputItemCount').val != '') $('#inputBoxCount').val(rs)
+	}else{
+		$('#singleNum').text('')
+	}
+  }
+
+
+  $('#inputTotalCount, #inputItemCount').change(boxCalc)
+  //박스수량 변경시
+  $('#inputBoxCount').change(function(){
+	  $('#inputTotalCount').val('');
+  })
+
+  $('#checkNotMakeEndPage').click(boxCalc)
+
+  $('#inputProductCode').keyup(function(){
+	searchData(this.value)
+  });
+
+
+  //--------------버튼
+  //페이지 생성
+  $('#makePageBtn').click(function(){
+	let today = $('#inputToday').val();
+	let productCode = $('#inputProductCode').val();
+	let productName = $('#inputProductName').val();
+	let boxNumber = $('#inputBoxNumber').val();
+	let inputTotalCount = parseInt($('#inputTotalCount').val());//총수량
+	let inputItemCount = parseInt($('#inputItemCount').val());//박스당개수
+	let inputBoxCount = parseInt($('#inputBoxCount').val());//박스수량
+	let inputLoopCount = parseInt($('#inputLoopCount').val());//중복출력수
+	let inputMemo = $('#inputMemo').val();
+	let templateCode = $('#templateBox').html();
+	
+	$('#printBox').html('');
+	let checkNotMakeEndPage =  $('#checkNotMakeEndPage').prop('checked');
+	let single = '';
+	if(inputTotalCount > 0 && inputItemCount > 0) single = inputTotalCount % inputItemCount
+	
+	for (let i = 1; i <= inputBoxCount; i++) {
+		for (let j = 1; j <= inputLoopCount; j++) {
+			let other = '';
+			if(inputTotalCount> 0 && inputItemCount> 0){
+				if(i == inputBoxCount){
+					if(checkNotMakeEndPage && single !== '' ) other = ' ('+ inputItemCount +')';
+					else other = ' (+'+ (single) +')';
+				}else{
+					other = ' ('+ inputItemCount +')';
+				}
+			}
+			// if(i == inputBoxCount){
+			// 	other = single;
+			// 	if(other == 0 ) other = '';
+			// 	else other = ' (+'+ other +')';
+			// }
+			templateCode2 = templateCode;
+			templateCode2 = templateCode2.replace('오늘날짜', today);
+			templateCode2 = templateCode2.replace('박스번호', boxNumber);
+			templateCode2 = templateCode2.replace('제 품 명', productName);
+			templateCode2 = templateCode2.replace('제품코드', productCode);
+			templateCode2 = templateCode2.replace('박스수량', i +'/'+ inputBoxCount + other);
+			templateCode2 = templateCode2.replace('특이사항', inputMemo);
+			// console.log(templateCode2)
+			$('#printBox').append(templateCode2);
+		}
+	}
+	
+  })
+
+  //프린트 하기
+  $('#printBtn').click(function(){
+	if($('#printBox').text().trim() == '') alert('페이지 생성후 프린트 하세요.')
+	else window.print();
+  })
+
+
+</script>
+
+
+</body>
+
+</html>
