@@ -155,7 +155,9 @@
 		<div>
 			<h1>2. 패킹리스트_박스출력엑셀 선택하기</h1>
 			<b>* 파일선택:</b> <input type="file" id="inputExcelFile"  accept=".xls,.xlsx,.csv" > <span id="fileState"></span>
-			<div id="excelDataTable"></div>
+			<input type="number" id="setTableSearchColNum" placeholder="품목코드 열" title="자동입력 제품코드(ID|제품코드|코드번호)" />
+			<input type="number" id="setTableProductNameColNum" placeholder="찾은 제품명 열" title="자동입력 제품명(SPV名称|제품명)" />
+			<div id="excelDataTable"></input>
 			<!-- <button id="excelLoadBtn">Excel Load</button> -->
 		</div>
 
@@ -182,6 +184,9 @@
 
 	</div>
 	<style>
+
+		#excelDataTable thead th {background: #ddd;}
+
 		.sheet article {position: relative;}
 		.sheet article .head {font-size:30px; display:flex;text-align: center; position: absolute; width: 100%;} 
 		.sheet article .head div { width:100%; } 
@@ -279,22 +284,22 @@ function ProcessExcel(data) {
 	var excelRows = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[firstSheet]);
 	excelDataToTable(excelRows)
 	excelData = excelRows;
-	console.log(excelRows)
+	// console.log(excelRows)
 };
 
 function excelDataToTable(excelData, startRowNum=1, codeFieldNum=0, nameFieldNum=1) {
 	keys = Object.values(excelData[startRowNum]);
-	console.log(keys)
+	// console.log(keys)
 	let rs = '<table border="1" cellspacing="0">';
 	let head='', rowData='';
 	for (let i = startRowNum; i < excelData.length; i++) {
 		// console.log(excelData[i]);
 		// console.log(i, excelData[i][keys[0]], excelData[i][keys[1]], excelData[i][keys[2]], excelData[i][keys[3]]);
 		if(i == startRowNum){
-			console.log(i, startRowNum)
+			// console.log(i, startRowNum)
 			head = '<thead><tr>';
 			for(var j = 0; j < keys.length; j++) {
-				head += `<th>`+keys[j]+`</th>`;
+				head += `<th  title="`+ j +`번 입력">`+ j +`. `+ (keys[j].trim()) +`</th>`;
 			}
 			head += '</tr></thead>';
 		}else{
@@ -313,17 +318,41 @@ function excelDataToTable(excelData, startRowNum=1, codeFieldNum=0, nameFieldNum
 	rs +=head + '<tbody>'+ rowData +'</tbody>'; 
 	rs += '</table>';
 	$('#excelDataTable').html(rs);
+	autoExcelColNumber();//엑셀 검색 번호 자동 계산해줌.
 
 }
 
+
+//품목코드 열을 자동 찾아줌
+function autoExcelColNumber(codeName='ID|제품코드|코드번호', resultName='SPV名称|제품명'){
+	let codeIndex = tableColName2ColIndex(codeName);
+	let resultIndex = tableColName2ColIndex(resultName);
+	$('#setTableSearchColNum').val(codeIndex);
+	$('#setTableProductNameColNum').val(resultIndex)
+}
+	//테이블 이름에서 몇번재 열에 있는지 찾음
+	function tableColName2ColIndex(colName){
+		if(colName.indexOf('|') > 1){
+			let arr = colName.split('|');
+			for (let i = 0; i < arr.length; i++) {
+				let temp = $('#excelDataTable thead th:contains("'+ (arr[i].trim()) +'")').index();
+				if(temp > -1) return temp;
+			}
+		}else{
+			return $('#excelDataTable thead th:contains("'+colName+'")').index()
+		}
+		return '';
+	}
+
+
 //품목코드로 검색
-function searchData(find, codeName= 'ID', resultName='SPV名称'){
+function searchData(find){
 	if($('#excelDataTable table').length == 0 ){
 		// alert('엑셀 파일을 선택하세요.');
 		return; 
 	} 
-	codeIndex = $('#excelDataTable thead th:contains("'+codeName+'")').index()
-	resultIndex = $('#excelDataTable thead th:contains("'+resultName+'")').index()
+	codeIndex = $('#setTableSearchColNum').val()
+	resultIndex = $('#setTableProductNameColNum').val()
 	// console.log(codeIndex, resultIndex)
 	$('#excelDataTable tbody tr').each(function(i,v){
 		let data = $(v).find('td:eq('+ codeIndex +')').text().trim();
