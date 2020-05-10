@@ -157,10 +157,10 @@
 			<b>* 파일선택:</b> <input type="file" id="inputExcelFile"  accept=".xls,.xlsx,.csv" > <span id="fileState"></span>
 			<input type="number" id="setTableSearchColNum" placeholder="품목코드 열" title="자동입력 제품코드(ID|제품코드|코드번호)" />
 			<input type="number" id="setTableProductNameColNum" placeholder="찾은 제품명 열" title="자동입력 제품명(SPV名称|제품명)" />
-			<div id="excelDataTable"></input>
-			<!-- <button id="excelLoadBtn">Excel Load</button> -->
+			<div id="excelDataTable">
+				<!-- <button id="excelLoadBtn">Excel Load</button> -->
+			</div>
 		</div>
-
 		<div>
 			<h1>3. 프린트 정보 입력 (페이지 생성 및 출력)</h1>
 			<b>오늘날짜:</b> <input type="text" id="inputToday" /><br>
@@ -181,36 +181,35 @@
 			<br>
 			<button id="makePageBtn">페이지 생성</button> <button id="printBtn">프린트 하기</button>
 		</div>
+		
+		<style>
 
-	</div>
-	<style>
+			#excelDataTable thead th {background: #ddd;}
 
-		#excelDataTable thead th {background: #ddd;}
+			.sheet article {position: relative;}
+			.sheet article .head {font-size:30px; display:flex;text-align: center; position: absolute; width: 100%;} 
+			.sheet article .head div { width:100%; } 
+			.sheet article .body{text-align:center; font-size:120px;height:100%;width:100%;display:inline-flex;flex-direction:column;justify-content:center;align-items:center;}
+			.sheet article .foot {font-size:30px; display:flex;text-align: center; position: absolute; width: 100%; bottom: 0;} 
+			.sheet article .foot div { width:100%; } 
+		
+			.sheet article .box4 { color: blue;} 
+			.sheet article .box5 { color: red;} 
 
-		.sheet article {position: relative;}
-		.sheet article .head {font-size:30px; display:flex;text-align: center; position: absolute; width: 100%;} 
-		.sheet article .head div { width:100%; } 
-		.sheet article .body{text-align:center; font-size:120px;height:100%;width:100%;display:inline-flex;flex-direction:column;justify-content:center;align-items:center;}
-		.sheet article .foot {font-size:30px; display:flex;text-align: center; position: absolute; width: 100%; bottom: 0;} 
-		.sheet article .foot div { width:100%; } 
-	  
-		.sheet article .box4 { color: blue;} 
-		.sheet article .box5 { color: red;} 
-
-		.minicolors-theme-default .minicolors-input{height:unset;}
-		.minicolors-theme-default .minicolors-swatch{top:0;left:0;width:17px;height:17px;}
+			.minicolors-theme-default .minicolors-input{height:unset;}
+			.minicolors-theme-default .minicolors-swatch{top:0;left:0;width:17px;height:17px;}
 
 
-		#inputMemo {width:679px;}
-		#inputProductName {width:679px;}
+			#inputMemo {width:679px;}
+			#inputProductName {width:679px;}
 
-		#checkNotMakeEndPage { vertical-align: middle;}
-	  
-	</style>
+			#checkNotMakeEndPage { vertical-align: middle;}
+		
+		</style>
 
-  </div>
-  <div id="printBox" class="A4 landscape">
-  </div>
+  	</div>
+</div>
+<div id="printBox" class="A4 landscape">
 <script>
 
 
